@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Box: Animated Online</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* --- VISUAL STYLES --- */
+        :root {
+            --skin: #ffdbac;
+            --skin-shadow: #e0ac69;
+            --bg: #1a1a2e;
+            --accent: #00d2ff;
+        }
+
+        body {
+            font-family: 'Arial Rounded MT Bold', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            height: 100vh;
+            justify-content: center;
+        }
+
+        /* Setup Screen */
+        #setup { text-align: center; background: #16213e; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input { padding: 12px; border-radius: 8px; border: none; margin: 10px; width: 220px; font-size: 16px; }
+        button { padding: 12px 25px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { transform: scale(1.05); background: #3a7bd5; }
+
+        /* Game Layout */
+        #game-container { display: none; flex-direction: column; align-items: center; gap: 40px; }
+        .score-board { font-size: 20px; color: var(--accent); margin-bottom: 10px; }
+        #game-msg { font-size: 24px; font-weight: bold; height: 30px; margin-bottom: 20px; color: #ffdd59; }
+
+        /* --- THE ANIMATED HAND --- */
+        .hand-wrapper { position: relative; width: 150px; height: 200px; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .hand {
+            position: relative; width: 100px; height: 130px; background: var(--skin);
+            border-radius: 25px 25px 10px 10px; border-bottom: 8px solid var(--skin-shadow); margin: 0 auto;
+        }
+        .finger {
+            position: absolute; top: -60px; left: 30px; width: 40px; height: 90px;
+            background: var(--skin); border-radius: 20px 20px 0 0; border-top: 4px solid rgba(0,0,0,0.1);
+        }
+
+        /* --- THE ANIMATED FACE --- */
+        .face-container { position: relative; width: 200px; height: 200px; transition: transform 0.4s ease; }
+        .head {
+            width: 160px; height: 190px; background: var(--skin); border-radius: 80px 80px 60px 60px;
+            position: relative; margin: 0 auto; border-bottom: 8px solid var(--skin-shadow);
+        }
+        .eye-row { display: flex; justify-content: space-around; padding-top: 60px; width: 120px; margin: 0 auto; }
+        .eye { width: 30px; height: 30px; background: white; border-radius: 50%; position: relative; overflow: hidden; }
+        .pupil { width: 12px; height: 12px; background: #333; border-radius: 50%; position: absolute; top: 9px; left: 9px; transition: 0.3s; }
+        .mouth { width: 50px; height: 15px; border-bottom: 4px solid var(--skin-shadow); border-radius: 50%; margin: 30px auto; }
+
+        /* --- ANIMATION STATES --- */
+        .look-up { transform: translateY(-30px); }
+        .look-down { transform: translateY(30px); }
+        .look-left { transform: translateX(-50px); }
+        .look-right { transform: translateX(50px); }
+
+        .hand-up { transform: translateY(-40px) rotate(0deg); }
+        .hand-down { transform: translateY(40px) rotate(180deg); }
+        .hand-left { transform: translateX(-60px) rotate(-90deg); }
+        .hand-right { transform: translateX(60px) rotate(90deg); }
+
+        .controls { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; margin-top: 20px; }
+        .btn-up { grid-column: 2; }
+        .btn-left { grid-column: 1; }
+        .btn-right { grid-column: 3; }
+        .btn-down { grid-column: 2; }
+    </style>
+</head>
+<body>
+
+    <div id="setup">
+        <h1>Shadow Box Online</h1>
+        <p>Step 1: Create your ID</p>
+        <input type="text" id="myId" placeholder="Your Username">
+        <button onclick="initPeer()">Go Online</button>
+        
+        <div id="connect-section" style="display:none; margin-top:30px; border-top: 1px solid #333; padding-top: 20px;">
+            <p>Step 2: Connect to a Friend</p>
+            <input type="text" id="peerId" placeholder="Friend's Username">
+            <button onclick="connectToPeer()">Connect & Play</button>
+        </div>
+        <p id="net-status" style="color: #00d2ff; margin-top: 15px;"></p>
+    </div>
+
+    <div id="game-container">
+        <div class="score-board">Me: <span id="my-score">0</span> | Opponent: <span id="opp-score">0</span></div>
+        <div id="game-msg">Waiting for opponent...</div>
+
+        <div id="opp-view" class="face-container">
+            <div class="head">
+                <div class="eye-row">
+                    <div class="eye"><div class="pupil" id="eye-l"></div></div>
+                    <div class="eye"><div class="pupil" id="eye-r"></div></div>
+                </div>
+                <div class="mouth"></div>
+            </div>
+        </div>
+
+        <div id="my-view" class="hand-wrapper">
+            <div class="hand"><div class="finger"></div></div>
+        </div>
+
+        <div class="controls" id="controls">
+            <button class="btn-up" onclick="sendMove('up')">UP</button>
+            <button class="btn-left" onclick="sendMove('left')">LEFT</button>
+            <button class="btn-right" onclick="sendMove('right')">RIGHT</button>
+            <button class="btn-down" onclick="sendMove('down')">DOWN</button>
+        </div>
+    </div>
+
+<script>
+    let peer, conn;
+    let myRole = ''; 
+    let myMove = null, oppMove = null;
+    let scores = { me: 0, opp: 0 };
+
+    function initPeer() {
+        const id = document.getElementById('myId').value.trim();
+        if(!id) return alert("Please enter a username first.");
+        
+        // PeerJS with STUN servers to bypass Firewalls
+        peer = new Peer(id, {
+            config: {'iceServers': [{ url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun1.l.google.com:19302' }]}
+        });
+
+        peer.on('open', () => {
+            document.getElementById('connect-section').style.display = 'block';
+            document.getElementById('net-status').innerText = "Status: Online as " + id;
+        });
+
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+            startRound('looker'); // The person being connected to is the Looker
+        });
+
+        peer.on('error', err => alert("Error: " + err.type));
+    }
+
+    function connectToPeer() {
+        const pId = document.getElementById('peerId').value.trim();
+        if(!pId) return alert("Enter your friend's name.");
+        conn = peer.connect(pId);
+        setupConn();
+        startRound('pointer'); // The person initiating the connection is the Pointer
+    }
+
+    function setupConn() {
+        conn.on('open', () => {
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game-container').style.display = 'flex';
+        });
+        conn.on('data', data => {
+            if(data.type === 'move') {
+                oppMove = data.val;
+                resolveRound();
+            }
+        });
+    }
+
+    function startRound(role) {
+        myRole = role;
+        myMove = null; oppMove = null;
+        document.getElementById('game-msg').innerText = "YOU ARE THE " + role.toUpperCase();
+        
+        resetVisuals();
+        document.getElementById('controls').style.opacity = '1';
+        document.getElementById('controls').style.pointerEvents = 'auto';
+
+        // Swap UI so the relevant avatar is on bottom
+        document.getElementById('my-view').style.display = (role === 'pointer') ? 'block' : 'none';
+        document.getElementById('opp-view').style.display = (role === 'looker') ? 'block' : 'none';
+        
+        // The opponent avatar logic
+        if(role === 'pointer') {
+            document.getElementById('opp-view').style.display = 'block'; // Pointer sees face
+            document.getElementById('opp-view').style.order = "-1"; 
+        } else {
+            document.getElementById('my-view').style.display = 'block'; // Looker sees hand
+            document.getElementById('my-view').style.order = "-1";
+        }
+    }
+
+    function sendMove(dir) {
+        myMove = dir;
+        document.getElementById('controls').style.opacity = '0.5';
+        document.getElementById('controls').style.pointerEvents = 'none';
+        conn.send({type: 'move', val: dir});
+        
+        // Animate my own piece
+        const myElementId = (myRole === 'pointer') ? 'my-view' : 'opp-view';
+        animateMove(myElementId, dir, myRole);
+        
+        document.getElementById('game-msg').innerText = "Waiting for opponent...";
+        resolveRound();
+    }
+
+    function resolveRound() {
+        if(!myMove || !oppMove) return;
+
+        // Animate the opponent's piece
+        const oppElementId = (myRole === 'pointer') ? 'opp-view' : 'my-view';
+        const oppRole = (myRole === 'pointer') ? 'looker' : 'pointer';
+        animateMove(oppElementId, oppMove, oppRole);
+
+        const match = (myMove === oppMove);
+        let win = (myRole === 'pointer') ? match : !match;
+
+        setTimeout(() => {
+            if(win) {
+                scores.me++;
+                document.getElementById('game-msg').innerText = "POINT TO YOU! 🎉";
+            } else {
+                scores.opp++;
+                document.getElementById('game-msg').innerText = "POINT TO OPPONENT! 💀";
+            }
+            document.getElementById('my-score').innerText = scores.me;
+            document.getElementById('opp-score').innerText = scores.opp;
+
+            setTimeout(() => startRound(myRole === 'pointer' ? 'looker' : 'pointer'), 2000);
+        }, 500);
+    }
+
+    function animateMove(id, dir, role) {
+        const el = document.getElementById(id);
+        el.className = (role === 'pointer') ? 'hand-wrapper' : 'face-container';
+        el.classList.add((role === 'pointer' ? 'hand-' : 'look-') + dir);
+        
+        if(role === 'looker') {
+            const pupils = [document.getElementById('eye-l'), document.getElementById('eye-r')];
+            const offset = { up: '-10px', down: '10px', left: '-10px', right: '10px' };
+            pupils.forEach(p => {
+                p.style.transform = (dir === 'up' || dir === 'down') ? `translateY(${offset[dir]})` : `translateX(${offset[dir]})`;
+            });
+        }
+    }
+
+    function resetVisuals() {
+        document.getElementById('my-view').className = 'hand-wrapper';
+        document.getElementById('opp-view').className = 'face-container';
+        document.getElementById('eye-l').style.transform = '';
+        document.getElementById('eye-r').style.transform = '';
+    }
+</script>
+</body>
+</html>
