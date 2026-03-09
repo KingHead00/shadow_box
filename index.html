@@ -19,6 +19,11 @@
     --muted: #555570;
     --glow-red: 0 0 20px #ff3c3c88, 0 0 40px #ff3c3c44;
     --glow-teal: 0 0 20px #3cffcf88, 0 0 40px #3cffcf44;
+    /* Responsive box: fills available space but never exceeds 160px.
+       Vertical budget: viewport minus ~310px for HUD/timer/labels.
+       Horizontal budget: viewport minus 60px for padding. */
+    --box: min(160px, min(calc((100vh - 310px) / 3), calc((100vw - 60px) / 3)));
+    --gap: clamp(6px, 1.2vmin, 14px);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -60,18 +65,21 @@
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
     z-index: 10; transition: opacity 0.5s, transform 0.5s;
+    overflow-y: auto; /* allow scrolling if content taller than viewport */
+    padding: 16px;
   }
   .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.96); }
 
-  #lobby { flex-direction: column; gap: 0; }
+  /* lobby inner wrapper: centers vertically when there's room, stacks naturally when short */
+  #lobby { flex-direction: column; gap: 0; align-items: center; justify-content: center; min-height: 100%; }
 
-  .title-wrap { text-align: center; margin-bottom: 40px; animation: titleFloat 3s ease-in-out infinite; }
+  .title-wrap { text-align: center; margin-bottom: clamp(16px, 3vh, 40px); animation: titleFloat 3s ease-in-out infinite; }
   @keyframes titleFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
   .title-main {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(64px, 10vw, 120px);
-    letter-spacing: 12px; line-height: 1;
+    font-size: clamp(36px, 8vw, 120px);
+    letter-spacing: clamp(4px, 1vw, 12px); line-height: 1;
     background: linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ffd700 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     filter: drop-shadow(0 0 30px #ff3c3c88);
@@ -79,11 +87,12 @@
   }
   @keyframes titleGlow { 0%,100% { filter: drop-shadow(0 0 20px #ff3c3c88); } 50% { filter: drop-shadow(0 0 50px #ff3c3ccc); } }
 
-  .title-sub { font-size: 13px; letter-spacing: 8px; color: var(--accent2); text-transform: uppercase; margin-top: 4px; opacity: 0.8; }
+  .title-sub { font-size: clamp(9px, 1.5vw, 13px); letter-spacing: clamp(3px, 1vw, 8px); color: var(--accent2); text-transform: uppercase; margin-top: 4px; opacity: 0.8; }
 
   .card {
     background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
-    padding: 36px 40px; width: 420px; position: relative; overflow: hidden;
+    padding: clamp(20px, 4vw, 36px) clamp(20px, 5vw, 40px);
+    width: min(420px, 100%); position: relative; overflow: hidden;
   }
   .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
 
@@ -125,34 +134,41 @@
   .wait-status { font-size: 12px; letter-spacing: 2px; color: var(--muted); animation: pulse 2s ease-in-out infinite; }
   .wait-status.ready { color: var(--accent2); animation: none; }
 
-  #game { flex-direction: column; gap: 0; }
+  #game { flex-direction: column; gap: 0; align-items: center; justify-content: flex-start; padding-top: max(8px, 1vh); min-height: 100%; }
 
-  .hud { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 900px; padding: 16px 24px; z-index: 20; }
-  .hud-player { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .hud { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 900px; padding: clamp(6px,1.5vh,16px) clamp(10px,2vw,24px); z-index: 20; }
+  .hud-player { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .hud-player.right { align-items: flex-end; }
-  .hud-role { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; }
+  .hud-role { font-size: clamp(8px,1.2vw,10px); letter-spacing: 4px; text-transform: uppercase; }
   .hud-role.pointer { color: var(--accent); } .hud-role.looker { color: var(--accent2); }
-  .hud-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 3px; }
-  .hud-score { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 4px; color: var(--gold); filter: drop-shadow(0 0 12px #ffd70088); animation: scoreGlow 2s ease-in-out infinite; }
+  .hud-name { font-family: 'Bebas Neue', sans-serif; font-size: clamp(16px,2.5vw,26px); letter-spacing: 3px; }
+  .hud-score { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px,5vmin,48px); letter-spacing: 4px; color: var(--gold); filter: drop-shadow(0 0 12px #ffd70088); animation: scoreGlow 2s ease-in-out infinite; }
   @keyframes scoreGlow { 0%,100% { filter: drop-shadow(0 0 8px #ffd70066); } 50% { filter: drop-shadow(0 0 20px #ffd700cc); } }
-  .vs-badge { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 4px; color: var(--muted); padding: 6px 16px; border: 1px solid var(--border); border-radius: 2px; }
+  .vs-badge { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 4px; color: var(--muted); padding: 4px 12px; border: 1px solid var(--border); border-radius: 2px; }
 
-  .round-bar { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 8px; z-index: 20; }
-  .round-label { font-size: 11px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
-  .round-num   { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 4px; color: var(--text); }
-  .role-badge  { font-size: 11px; letter-spacing: 3px; padding: 5px 14px; border-radius: 2px; text-transform: uppercase; }
+  .round-bar { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 4px; z-index: 20; flex-wrap: wrap; }
+  .round-label { font-size: 10px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
+  .round-num   { font-family: 'Bebas Neue', sans-serif; font-size: clamp(18px,3vmin,28px); letter-spacing: 4px; color: var(--text); }
+  .role-badge  { font-size: 10px; letter-spacing: 3px; padding: 4px 10px; border-radius: 2px; text-transform: uppercase; }
   .role-badge.is-pointer { background: rgba(255,60,60,0.2);  border: 1px solid var(--accent);  color: var(--accent);  }
   .role-badge.is-looker  { background: rgba(60,255,207,0.2); border: 1px solid var(--accent2); color: var(--accent2); }
 
   .box-arena { position: relative; z-index: 20; }
-  .box-grid  { display: grid; grid-template-columns: 160px 160px 160px; grid-template-rows: 160px 160px 160px; gap: 14px; perspective: 800px; }
+  .box-grid  {
+    display: grid;
+    grid-template-columns: repeat(3, var(--box));
+    grid-template-rows:    repeat(3, var(--box));
+    gap: var(--gap);
+    perspective: 800px;
+  }
   .shadow-box[data-dir="up"]    { grid-column: 2; grid-row: 1; }
   .shadow-box[data-dir="left"]  { grid-column: 1; grid-row: 2; }
   .shadow-box[data-dir="right"] { grid-column: 3; grid-row: 2; }
   .shadow-box[data-dir="down"]  { grid-column: 2; grid-row: 3; }
   .box-center { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: center; }
   .center-diamond {
-    width: 60px; height: 60px; border: 1px solid var(--border); transform: rotate(45deg);
+    width: calc(var(--box) * 0.375); height: calc(var(--box) * 0.375);
+    border: 1px solid var(--border); transform: rotate(45deg);
     background: var(--panel); animation: diamondSpin 8s ease-in-out infinite;
   }
   @keyframes diamondSpin {
@@ -161,7 +177,7 @@
     100% { transform: rotate(45deg) scale(1);    border-color: var(--border); }
   }
   .shadow-box {
-    width: 160px; height: 160px; background: var(--panel); border: 1px solid var(--border);
+    width: var(--box); height: var(--box); background: var(--panel); border: 1px solid var(--border);
     border-radius: 4px; cursor: none; position: relative; overflow: hidden;
     transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s; transform-style: preserve-3d;
   }
@@ -187,7 +203,7 @@
     font-family: 'Space Mono', monospace; display: flex; gap: 5px; align-items: center; white-space: nowrap;
   }
   .key-chip { border: 1px solid rgba(255,255,255,0.15); border-radius: 2px; padding: 1px 6px; font-size: 9px; letter-spacing: 1px; }
-  .box-arrow { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 32px; opacity: 0.08; transition: opacity 0.3s; pointer-events: none; }
+  .box-arrow { position: absolute; top: 8%; left: 50%; transform: translateX(-50%); font-size: clamp(16px, calc(var(--box) * 0.2), 32px); opacity: 0.08; transition: opacity 0.3s; pointer-events: none; }
   .shadow-box:hover .box-arrow { opacity: 0.3; }
 
   .shadow-box.selected-pointer { border-color: var(--accent) !important; box-shadow: var(--glow-red), inset 0 0 30px rgba(255,60,60,0.15) !important; background: rgba(255,60,60,0.08) !important; }
@@ -233,7 +249,7 @@
   .reveal-vs    { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 4px; color: var(--muted); align-self: center; }
   .result-detail { font-size: 12px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; animation: fadeSlideUp 0.4s ease 0.25s both; }
 
-  .timer-wrap { width: 100%; max-width: 480px; margin: 10px 0; z-index: 20; }
+  .timer-wrap { width: 100%; max-width: min(480px, calc(var(--box) * 3 + var(--gap) * 2)); margin: 4px 0; z-index: 20; }
   .timer-label { font-size: 11px; letter-spacing: 4px; color: var(--muted); text-align: center; margin-bottom: 7px; transition: color 0.3s; }
   .timer-label.urgent { color: var(--accent); animation: urgentPulse 0.4s ease-in-out infinite; }
   @keyframes urgentPulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
@@ -703,7 +719,20 @@ function startRound(){
   });
   timerInterval=setInterval(()=>{
     timeLeft-=0.1; updateTimerDisplay();
-    if(timeLeft<=0){ clearInterval(timerInterval); if(!myChoice) selectBox(Math.floor(Math.random()*4),true); }
+    if(timeLeft<=0){
+      // Both players must choose — don't auto-pick. Just restart the timer with a nudge.
+      timeLeft=ROUND_TIME;
+      const ticker=document.getElementById('instruction-text');
+      ticker.textContent = myRole==='pointer'
+        ? '⚠️ Pick a direction — your opponent is waiting!'
+        : '⚠️ Pick a direction — your opponent is waiting!';
+      ticker.className='instruction-ticker waiting-msg';
+      // flash all boxes to draw attention
+      document.querySelectorAll('.shadow-box').forEach(b=>{
+        b.style.borderColor='rgba(255,215,0,0.5)';
+        setTimeout(()=>{ b.style.borderColor=''; },400);
+      });
+    }
   },100);
 }
 
