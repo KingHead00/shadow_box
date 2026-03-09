@@ -43,8 +43,7 @@
   }
   #cursor-hand svg { width: 48px; height: 48px; filter: drop-shadow(0 0 8px #ff3c3c); }
   #cursor-face svg { width: 52px; height: 52px; filter: drop-shadow(0 0 8px #3cffcf); }
-  .eye-blink { animation: blink 3s infinite; }
-  @keyframes blink { 0%,90%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.05); } }
+  .eye-blink { /* blink animation removed — was causing whole eyeball to jump */ }
 
   #bg-grid {
     position: fixed; inset: 0;
@@ -331,8 +330,8 @@
 
 <!-- LOBBY -->
 <div class="screen" id="lobby">
-  <div>
-    <div class="title-wrap">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:clamp(16px,3vh,32px);">
+    <div class="title-wrap" style="margin-bottom:0;">
       <div class="title-main">SHADOW BOX</div>
       <div class="title-sub">The Mind-Game of Hidden Choices</div>
     </div>
@@ -591,12 +590,17 @@ function joinRoom(){
 function cancelWait(){ destroyPeer(); showScreen('lobby'); }
 
 function onDisconnect(){
+  clearInterval(timerInterval);
+  document.getElementById('result-overlay').classList.remove('show');
   if(!document.getElementById('game').classList.contains('hidden')){
-    clearInterval(timerInterval);
-    document.getElementById('result-overlay').classList.remove('show');
-    alert('Your opponent disconnected.');
+    // Opponent left during the game — remaining player wins
+    myScore = TOTAL_ROUNDS; opScore = 0;
+    endGame();
+    // Override winner label to reflect forfeit
+    document.getElementById('go-winner-label').textContent = `🏆 ${myUsername} WINS — Opponent left!`;
+  } else {
+    goLobby();
   }
-  goLobby();
 }
 
 // ════════════════════════════════════
