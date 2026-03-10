@@ -291,25 +291,18 @@
 <body>
 
 <div id="cursor-hand">
-  <!-- Hand points RIGHT by default; rotated via JS to match chosen direction -->
+  <!-- Index finger points UP by default; JS rotates to match chosen direction -->
   <svg id="hand-svg" viewBox="0 0 48 48" fill="none" style="transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);">
-    <!-- index finger pointing right -->
-    <rect x="26" y="21" width="18" height="7" rx="3.5" fill="#ff3c3c"/>
-    <!-- middle finger -->
-    <rect x="26" y="14" width="16" height="6" rx="3" fill="#cc2020"/>
-    <!-- ring finger -->
-    <rect x="26" y="8"  width="14" height="6" rx="3" fill="#aa1010"/>
-    <!-- pinky -->
-    <rect x="26" y="3"  width="12" height="5" rx="2.5" fill="#881010"/>
-    <!-- thumb -->
-    <rect x="26" y="28" width="10" height="6" rx="3" fill="#cc2020"/>
-    <!-- palm -->
-    <rect x="10" y="21" width="18" height="20" rx="5" fill="#ff3c3c"/>
-    <!-- nail on index -->
-    <rect x="39" y="22" width="5" height="3" rx="1.5" fill="#ff8080" opacity="0.6"/>
-    <!-- knuckle lines on palm -->
-    <line x1="14" y1="30" x2="18" y2="30" stroke="#cc2020" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="14" y1="34" x2="18" y2="34" stroke="#cc2020" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="21" y="4"  width="7"  height="18" rx="3.5" fill="#ff3c3c"/>
+    <rect x="29" y="10" width="6"  height="16" rx="3"   fill="#cc2020"/>
+    <rect x="35" y="12" width="6"  height="14" rx="3"   fill="#aa1010"/>
+    <rect x="41" y="14" width="5"  height="12" rx="2.5" fill="#881010"/>
+    <rect x="13" y="16" width="6"  height="10" rx="3"   fill="#cc2020"/>
+    <rect x="13" y="22" width="34" height="16" rx="5"   fill="#ff3c3c"/>
+    <rect x="23" y="5"  width="3"  height="5"  rx="1.5" fill="#ff8080" opacity="0.6"/>
+    <line x1="31" y1="24" x2="31" y2="28" stroke="#cc2020" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="37" y1="24" x2="37" y2="28" stroke="#cc2020" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="43" y1="24" x2="43" y2="28" stroke="#cc2020" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
 </div>
 
@@ -476,7 +469,7 @@ function setCursorMode(m) {
 
 // Rotate hand / shift eyes based on chosen direction
 // idx: 0=up, 1=left, 2=right, 3=down
-const DIR_HAND_ROT  = { 0: -90, 1: 180, 2: 0,  3: 90  }; // degrees — hand points right by default
+const DIR_HAND_ROT  = { 0: 0, 1: -90, 2: 90, 3: 180 }; // hand points UP by default
 const DIR_EYE_SHIFT = {
   0: { dx:  0, dy: -2.5 },  // up
   1: { dx: -2.5, dy: 0 },   // left
@@ -559,22 +552,42 @@ const TOTAL_ROUNDS=7, ROUND_TIME=5;
 let roundResults=[], myChoice=null, opChoice=null, roundActive=false, timerInterval=null, timeLeft=ROUND_TIME;
 
 // ════════════════════════════════════
-//  PEERJS NETWORKING
-//  Uses PeerJS free public broker so
-//  players on different devices / networks
-//  can find each other by username alone.
+//  DUAL-TRANSPORT NETWORKING
+//  • BroadcastChannel  — instant, same browser/device (different tabs)
+//  • PeerJS WebRTC     — works cross-device, cross-network
+//  Host listens on both. Guest tries BC first (fast); if no response
+//  within 500ms also tries PeerJS. Whichever connects first wins.
 // ════════════════════════════════════
-let peer=null, conn=null, isHost=false;
+let peer = null, conn = null, isHost = false;
+let bcHost = null;   // BroadcastChannel open by host
+let bcGuest = null;  // BroadcastChannel open by guest
+let activeTransport = null; // 'bc' | 'peer'
+let bcPingTimer = null;
 
-// Make a safe PeerJS ID from a username
+const ICE = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+]};
+
 function toPeerId(name){ return 'sbx-'+name.toLowerCase().replace(/[^a-z0-9]/g,''); }
+function bcName(name)   { return 'sbx_bc_'+name.toLowerCase().replace(/[^a-z0-9]/g,''); }
 
-function sendMsg(msg){ if(conn && conn.open) conn.send(msg); }
+function sendMsg(msg){
+  if(activeTransport==='bc' && bcGuest) { bcGuest.postMessage(msg); return; }
+  if(activeTransport==='peer' && conn && conn.open) { conn.send(msg); return; }
+  // fallback: try both
+  try{ if(bcGuest) bcGuest.postMessage(msg); }catch(e){}
+  try{ if(conn && conn.open) conn.send(msg); }catch(e){}
+}
 
-function destroyPeer(){
-  try{ if(conn) conn.close(); }catch(e){}
-  try{ if(peer) peer.destroy(); }catch(e){}
-  conn=null; peer=null;
+function destroyAll(){
+  clearTimeout(bcPingTimer);
+  try{ if(bcHost)  bcHost.close();  }catch(e){} bcHost=null;
+  try{ if(bcGuest) bcGuest.close(); }catch(e){} bcGuest=null;
+  try{ if(conn)    conn.close();    }catch(e){} conn=null;
+  try{ if(peer)    peer.destroy();  }catch(e){} peer=null;
+  activeTransport=null;
 }
 
 // ════════════════════════════════════
@@ -599,36 +612,41 @@ function showScreen(id){
 function createRoom(){
   const name=document.getElementById('username-input').value.trim().toUpperCase();
   if(!name||name.length<2){setStatus('Enter a username (min 2 chars)','var(--accent)');return;}
-  myUsername=name; isHost=true; setStatus(''); destroyPeer();
+  myUsername=name; isHost=true; setStatus(''); destroyAll();
 
-  const ICE = { iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
-  ]};
+  // ── Transport 1: BroadcastChannel (same-browser tabs) ──
+  bcHost = new BroadcastChannel(bcName(name));
+  bcHost.onmessage = e => {
+    const msg = e.data;
+    if(msg.type==='JOIN' && activeTransport===null){
+      activeTransport='bc';
+      // mirror channel back to guest — guest opened same channel name
+      bcGuest = new BroadcastChannel(bcName(name));
+      handleMessage(msg);
+    } else if(activeTransport==='bc'){
+      handleMessage(msg);
+    }
+  };
 
-  peer=new Peer(toPeerId(name), { config: ICE });
-
+  // ── Transport 2: PeerJS (cross-device / cross-browser) ──
+  peer = new Peer(toPeerId(name), { config: ICE });
   peer.on('error', err=>{
     if(err.type==='unavailable-id'){
-      setStatus('That username is already hosting. Try another.','var(--accent)');
-      showScreen('lobby');
+      setStatus('Username already in use as host. Try another.','var(--accent)');
+      destroyAll(); showScreen('lobby');
     } else {
-      setWaitStatus('Network error: '+err.type);
+      setWaitStatus('PeerJS error: '+err.type+' — same-device still works');
     }
   });
-
   peer.on('open', ()=>{
     document.getElementById('wait-display-name').textContent=name;
-    setWaitStatus('Ready! Waiting for opponent to join...', true);
+    setWaitStatus('Ready! Waiting for opponent...', true);
     showScreen('waiting');
   });
-
   peer.on('connection', c=>{
-    if(conn){ c.close(); return; } // reject second joiner
-    conn=c;
-    conn.on('open',()=>{}); // wait for JOIN msg
+    if(activeTransport!==null){ c.close(); return; } // already connected via BC
+    conn=c; activeTransport='peer';
+    conn.on('open',()=>{});
     conn.on('data', handleMessage);
     conn.on('close', onDisconnect);
     conn.on('error', onDisconnect);
@@ -643,41 +661,61 @@ function joinRoom(){
   if(myName===opName){setStatus('Cannot join yourself!','var(--accent)');return;}
 
   myUsername=myName; opUsername=opName; isHost=false;
-  setStatus('Connecting...','var(--accent2)'); destroyPeer();
+  setStatus('Connecting...','var(--accent2)'); destroyAll();
 
-  const ICE = { iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
-  ]};
+  // ── Transport 1: BroadcastChannel (try immediately) ──
+  bcGuest = new BroadcastChannel(bcName(opName));
+  bcGuest.onmessage = e => {
+    const msg = e.data;
+    if(msg.type==='START' && activeTransport===null){
+      activeTransport='bc';
+      clearTimeout(bcPingTimer);
+      // close PeerJS attempt since BC won
+      try{ if(conn) conn.close(); }catch(e){} conn=null;
+      try{ if(peer) peer.destroy(); }catch(e){} peer=null;
+      handleMessage(msg);
+    } else if(activeTransport==='bc'){
+      handleMessage(msg);
+    }
+  };
+  // Send JOIN via BC right away
+  bcGuest.postMessage({type:'JOIN', from:myName});
 
-  peer=new Peer(undefined, { config: ICE }); // random ID for guest
-
-  peer.on('open',()=>{
-    conn=peer.connect(toPeerId(opName),{reliable:true});
-    conn.on('open',()=>{ conn.send({type:'JOIN',from:myName}); setStatus(''); });
-    conn.on('data', handleMessage);
-    conn.on('close', onDisconnect);
-    conn.on('error',()=>{ setStatus("Could not reach host. Are they waiting?",'var(--accent)'); });
-  });
-
-  peer.on('error', err=>{
-    setStatus('Connection failed: '+(err.message||err.type),'var(--accent)');
-  });
+  // ── Transport 2: PeerJS fallback (after 500ms if BC didn't respond) ──
+  bcPingTimer = setTimeout(()=>{
+    if(activeTransport!==null) return; // BC already won
+    setStatus('Trying direct connection...','var(--accent2)');
+    peer = new Peer(undefined, { config: ICE });
+    peer.on('open',()=>{
+      conn = peer.connect(toPeerId(opName),{reliable:true});
+      conn.on('open',()=>{
+        if(activeTransport!==null){ conn.close(); return; }
+        activeTransport='peer';
+        // close BC since PeerJS won
+        try{ if(bcGuest) bcGuest.close(); }catch(e){} bcGuest=null;
+        conn.send({type:'JOIN',from:myName}); setStatus('');
+      });
+      conn.on('data', msg=>{
+        if(activeTransport==='peer') handleMessage(msg);
+      });
+      conn.on('close', onDisconnect);
+      conn.on('error',()=>{ setStatus('Could not reach host. Are they waiting?','var(--accent)'); });
+    });
+    peer.on('error', err=>{
+      setStatus('Connection failed: '+(err.message||err.type),'var(--accent)');
+    });
+  }, 500);
 }
 
-function cancelWait(){ destroyPeer(); showScreen('lobby'); }
+function cancelWait(){ destroyAll(); showScreen('lobby'); }
 
 function onDisconnect(){
   clearInterval(timerInterval);
   document.getElementById('result-overlay').classList.remove('show');
   if(!document.getElementById('game').classList.contains('hidden')){
-    // Opponent left during the game — remaining player wins
-    myScore = TOTAL_ROUNDS; opScore = 0;
+    myScore=TOTAL_ROUNDS; opScore=0;
     endGame();
-    // Override winner label to reflect forfeit
-    document.getElementById('go-winner-label').textContent = `🏆 ${myUsername} WINS — Opponent left!`;
+    document.getElementById('go-winner-label').textContent=`🏆 ${myUsername} WINS — Opponent left!`;
   } else {
     goLobby();
   }
@@ -986,7 +1024,7 @@ function playAgain(){
   } else { goLobby(); }
 }
 
-function goLobby(){ destroyPeer(); setCursorMode('hand'); showScreen('lobby'); }
+function goLobby(){ destroyAll(); setCursorMode('hand'); showScreen('lobby'); }
 
 // ════════════════════════════════════
 //  KEYBOARD — WASD + ARROWS
