@@ -19,9 +19,6 @@
     --muted: #555570;
     --glow-red: 0 0 20px #ff3c3c88, 0 0 40px #ff3c3c44;
     --glow-teal: 0 0 20px #3cffcf88, 0 0 40px #3cffcf44;
-    /* Responsive box: fills available space but never exceeds 160px.
-       Vertical budget: viewport minus ~310px for HUD/timer/labels.
-       Horizontal budget: viewport minus 60px for padding. */
     --box: min(160px, min(calc((100vh - 310px) / 3), calc((100vw - 60px) / 3)));
     --gap: clamp(6px, 1.2vmin, 14px);
   }
@@ -43,7 +40,7 @@
   }
   #cursor-hand svg { width: 48px; height: 48px; filter: drop-shadow(0 0 8px #ff3c3c); }
   #cursor-face svg { width: 52px; height: 52px; filter: drop-shadow(0 0 8px #3cffcf); }
-  .eye-blink { /* blink animation removed — was causing whole eyeball to jump */ }
+  .eye-blink { /* blink animation removed */ }
 
   #bg-grid {
     position: fixed; inset: 0;
@@ -64,12 +61,11 @@
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
     z-index: 10; transition: opacity 0.5s, transform 0.5s;
-    overflow-y: auto; /* allow scrolling if content taller than viewport */
+    overflow-y: auto;
     padding: 16px;
   }
   .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.96); }
 
-  /* lobby inner wrapper: centers vertically when there's room, stacks naturally when short */
   #lobby { flex-direction: column; gap: 0; align-items: center; justify-content: center; min-height: 100%; }
 
   .title-wrap { text-align: center; margin-bottom: clamp(16px, 3vh, 40px); animation: titleFloat 3s ease-in-out infinite; }
@@ -291,8 +287,7 @@
 <body>
 
 <div id="cursor-hand">
-  <!-- Index finger points UP by default; JS rotates to match chosen direction -->
-  <svg id="hand-svg" viewBox="0 0 48 48" fill="none" style="transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1);">
+  <svg viewBox="0 0 48 48" fill="none">
     <rect x="21" y="4"  width="7"  height="18" rx="3.5" fill="#ff3c3c"/>
     <rect x="29" y="10" width="6"  height="16" rx="3"   fill="#cc2020"/>
     <rect x="35" y="12" width="6"  height="14" rx="3"   fill="#aa1010"/>
@@ -308,26 +303,18 @@
 
 <div id="cursor-face" style="display:none;">
   <svg viewBox="0 0 52 52" fill="none">
-    <!-- head -->
     <ellipse cx="26" cy="26" rx="22" ry="24" fill="#0a2a2a" stroke="#3cffcf" stroke-width="1.5"/>
     <ellipse cx="26" cy="5"  rx="14" ry="5"  fill="#1a4040"/>
-    <!-- eye sockets -->
-    <ellipse cx="17" cy="22" rx="6" ry="7" fill="#051515" stroke="#3cffcf" stroke-width="1"/>
-    <ellipse cx="35" cy="22" rx="6" ry="7" fill="#051515" stroke="#3cffcf" stroke-width="1"/>
-    <!-- irises (move with direction) -->
-    <ellipse id="iris-l" cx="17" cy="22" rx="3.5" ry="4" fill="#3cffcf"/>
-    <ellipse id="iris-r" cx="35" cy="22" rx="3.5" ry="4" fill="#3cffcf"/>
-    <!-- pupils -->
-    <ellipse id="pupil-l" cx="17" cy="22" rx="1.8" ry="2.2" fill="#001a1a"/>
-    <ellipse id="pupil-r" cx="35" cy="22" rx="1.8" ry="2.2" fill="#001a1a"/>
-    <!-- eye shines -->
-    <ellipse id="shine-l" cx="15.5" cy="20.5" rx="0.8" ry="0.8" fill="white" opacity="0.8"/>
-    <ellipse id="shine-r" cx="33.5" cy="20.5" rx="0.8" ry="0.8" fill="white" opacity="0.8"/>
-    <!-- nose -->
+    <ellipse cx="17" cy="22" rx="6"  ry="7"  fill="#051515" stroke="#3cffcf" stroke-width="1"/>
+    <ellipse cx="35" cy="22" rx="6"  ry="7"  fill="#051515" stroke="#3cffcf" stroke-width="1"/>
+    <ellipse cx="17" cy="22" rx="3.5" ry="4" fill="#3cffcf" class="eye-blink"/>
+    <ellipse cx="35" cy="22" rx="3.5" ry="4" fill="#3cffcf" class="eye-blink"/>
+    <ellipse cx="17" cy="22" rx="1.8" ry="2.2" fill="#001a1a"/>
+    <ellipse cx="35" cy="22" rx="1.8" ry="2.2" fill="#001a1a"/>
+    <ellipse cx="15.5" cy="20.5" rx="0.8" ry="0.8" fill="white" opacity="0.8"/>
+    <ellipse cx="33.5" cy="20.5" rx="0.8" ry="0.8" fill="white" opacity="0.8"/>
     <path d="M24 30 L26 35 L28 30" stroke="#3cffcf" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.5"/>
-    <!-- mouth -->
     <path d="M18 40 Q26 45 34 40" stroke="#3cffcf" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-    <!-- ears -->
     <ellipse cx="4"  cy="26" rx="3" ry="5" fill="#0a2a2a" stroke="#3cffcf" stroke-width="1"/>
     <ellipse cx="48" cy="26" rx="3" ry="5" fill="#0a2a2a" stroke="#3cffcf" stroke-width="1"/>
   </svg>
@@ -467,56 +454,6 @@ function setCursorMode(m) {
   cursorFace.style.display = m==='face'?'block':'none';
 }
 
-// Rotate hand / shift eyes based on chosen direction
-// idx: 0=up, 1=left, 2=right, 3=down
-const DIR_HAND_ROT  = { 0: 0, 1: -90, 2: 90, 3: 180 }; // hand points UP by default
-const DIR_EYE_SHIFT = {
-  0: { dx:  0, dy: -2.5 },  // up
-  1: { dx: -2.5, dy: 0 },   // left
-  2: { dx:  2.5, dy: 0 },   // right
-  3: { dx:  0, dy:  2.5 },  // down
-};
-
-function animateCursorForDir(idx) {
-  // Hand rotation
-  const rot = DIR_HAND_ROT[idx] ?? 0;
-  const handSvg = document.getElementById('hand-svg');
-  if (handSvg) handSvg.style.transform = `rotate(${rot}deg)`;
-
-  // Face eyes — shift irises, pupils and shines
-  const shift = DIR_EYE_SHIFT[idx] ?? { dx: 0, dy: 0 };
-  const pairs = [
-    ['iris-l',  17,    22   ],
-    ['iris-r',  35,    22   ],
-    ['pupil-l', 17,    22   ],
-    ['pupil-r', 35,    22   ],
-    ['shine-l', 15.5,  20.5 ],
-    ['shine-r', 33.5,  20.5 ],
-  ];
-  for (const [id, bx, by] of pairs) {
-    const el = document.getElementById(id);
-    if (el) {
-      el.setAttribute('cx', bx + shift.dx);
-      el.setAttribute('cy', by + shift.dy);
-    }
-  }
-}
-
-function resetCursorDir() {
-  const handSvg = document.getElementById('hand-svg');
-  if (handSvg) handSvg.style.transform = 'rotate(0deg)';
-  // reset eyes to center
-  const defaults = [
-    ['iris-l',17,22],['iris-r',35,22],
-    ['pupil-l',17,22],['pupil-r',35,22],
-    ['shine-l',15.5,20.5],['shine-r',33.5,20.5],
-  ];
-  for (const [id, bx, by] of defaults) {
-    const el = document.getElementById(id);
-    if (el) { el.setAttribute('cx', bx); el.setAttribute('cy', by); }
-  }
-}
-
 // ════════════════════════════════════
 //  PARTICLES
 // ════════════════════════════════════
@@ -552,42 +489,30 @@ const TOTAL_ROUNDS=7, ROUND_TIME=5;
 let roundResults=[], myChoice=null, opChoice=null, roundActive=false, timerInterval=null, timeLeft=ROUND_TIME;
 
 // ════════════════════════════════════
-//  DUAL-TRANSPORT NETWORKING
-//  • BroadcastChannel  — instant, same browser/device (different tabs)
-//  • PeerJS WebRTC     — works cross-device, cross-network
-//  Host listens on both. Guest tries BC first (fast); if no response
-//  within 500ms also tries PeerJS. Whichever connects first wins.
+//  PEERJS NETWORKING
+//  Uses PeerJS free public broker so
+//  players on different devices / networks
+//  can find each other by username alone.
 // ════════════════════════════════════
-let peer = null, conn = null, isHost = false;
-let bcHost = null;   // BroadcastChannel open by host
-let bcGuest = null;  // BroadcastChannel open by guest
-let activeTransport = null; // 'bc' | 'peer'
-let bcPingTimer = null;
+let peer=null, conn=null, isHost=false;
 
-const ICE = { iceServers: [
+// STUN servers so WebRTC works across routers and WiFi networks
+const PEER_CFG = { config: { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:global.stun.twilio.com:3478' },
-]};
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' }
+]}};
 
+// Make a safe PeerJS ID from a username
 function toPeerId(name){ return 'sbx-'+name.toLowerCase().replace(/[^a-z0-9]/g,''); }
-function bcName(name)   { return 'sbx_bc_'+name.toLowerCase().replace(/[^a-z0-9]/g,''); }
 
-function sendMsg(msg){
-  if(activeTransport==='bc' && bcGuest) { bcGuest.postMessage(msg); return; }
-  if(activeTransport==='peer' && conn && conn.open) { conn.send(msg); return; }
-  // fallback: try both
-  try{ if(bcGuest) bcGuest.postMessage(msg); }catch(e){}
-  try{ if(conn && conn.open) conn.send(msg); }catch(e){}
-}
+function sendMsg(msg){ if(conn && conn.open) conn.send(msg); }
 
-function destroyAll(){
-  clearTimeout(bcPingTimer);
-  try{ if(bcHost)  bcHost.close();  }catch(e){} bcHost=null;
-  try{ if(bcGuest) bcGuest.close(); }catch(e){} bcGuest=null;
-  try{ if(conn)    conn.close();    }catch(e){} conn=null;
-  try{ if(peer)    peer.destroy();  }catch(e){} peer=null;
-  activeTransport=null;
+function destroyPeer(){
+  try{ if(conn) conn.close(); }catch(e){}
+  try{ if(peer) peer.destroy(); }catch(e){}
+  conn=null; peer=null;
 }
 
 // ════════════════════════════════════
@@ -612,41 +537,29 @@ function showScreen(id){
 function createRoom(){
   const name=document.getElementById('username-input').value.trim().toUpperCase();
   if(!name||name.length<2){setStatus('Enter a username (min 2 chars)','var(--accent)');return;}
-  myUsername=name; isHost=true; setStatus(''); destroyAll();
+  myUsername=name; isHost=true; setStatus(''); destroyPeer();
 
-  // ── Transport 1: BroadcastChannel (same-browser tabs) ──
-  bcHost = new BroadcastChannel(bcName(name));
-  bcHost.onmessage = e => {
-    const msg = e.data;
-    if(msg.type==='JOIN' && activeTransport===null){
-      activeTransport='bc';
-      // mirror channel back to guest — guest opened same channel name
-      bcGuest = new BroadcastChannel(bcName(name));
-      handleMessage(msg);
-    } else if(activeTransport==='bc'){
-      handleMessage(msg);
-    }
-  };
+  peer=new Peer(toPeerId(name), PEER_CFG);
 
-  // ── Transport 2: PeerJS (cross-device / cross-browser) ──
-  peer = new Peer(toPeerId(name), { config: ICE });
   peer.on('error', err=>{
     if(err.type==='unavailable-id'){
-      setStatus('Username already in use as host. Try another.','var(--accent)');
-      destroyAll(); showScreen('lobby');
+      setStatus('That username is already hosting. Try another.','var(--accent)');
+      showScreen('lobby');
     } else {
-      setWaitStatus('PeerJS error: '+err.type+' — same-device still works');
+      setWaitStatus('Network error: '+err.type);
     }
   });
+
   peer.on('open', ()=>{
     document.getElementById('wait-display-name').textContent=name;
-    setWaitStatus('Ready! Waiting for opponent...', true);
+    setWaitStatus('Ready! Waiting for opponent to join...', true);
     showScreen('waiting');
   });
+
   peer.on('connection', c=>{
-    if(activeTransport!==null){ c.close(); return; } // already connected via BC
-    conn=c; activeTransport='peer';
-    conn.on('open',()=>{});
+    if(conn){ c.close(); return; } // reject second joiner
+    conn=c;
+    conn.on('open',()=>{}); // wait for JOIN msg
     conn.on('data', handleMessage);
     conn.on('close', onDisconnect);
     conn.on('error', onDisconnect);
@@ -661,61 +574,34 @@ function joinRoom(){
   if(myName===opName){setStatus('Cannot join yourself!','var(--accent)');return;}
 
   myUsername=myName; opUsername=opName; isHost=false;
-  setStatus('Connecting...','var(--accent2)'); destroyAll();
+  setStatus('Connecting...','var(--accent2)'); destroyPeer();
 
-  // ── Transport 1: BroadcastChannel (try immediately) ──
-  bcGuest = new BroadcastChannel(bcName(opName));
-  bcGuest.onmessage = e => {
-    const msg = e.data;
-    if(msg.type==='START' && activeTransport===null){
-      activeTransport='bc';
-      clearTimeout(bcPingTimer);
-      // close PeerJS attempt since BC won
-      try{ if(conn) conn.close(); }catch(e){} conn=null;
-      try{ if(peer) peer.destroy(); }catch(e){} peer=null;
-      handleMessage(msg);
-    } else if(activeTransport==='bc'){
-      handleMessage(msg);
-    }
-  };
-  // Send JOIN via BC right away
-  bcGuest.postMessage({type:'JOIN', from:myName});
+  peer=new Peer(undefined, PEER_CFG); // random ID for guest — host identifies us by our JOIN message
 
-  // ── Transport 2: PeerJS fallback (after 500ms if BC didn't respond) ──
-  bcPingTimer = setTimeout(()=>{
-    if(activeTransport!==null) return; // BC already won
-    setStatus('Trying direct connection...','var(--accent2)');
-    peer = new Peer(undefined, { config: ICE });
-    peer.on('open',()=>{
-      conn = peer.connect(toPeerId(opName),{reliable:true});
-      conn.on('open',()=>{
-        if(activeTransport!==null){ conn.close(); return; }
-        activeTransport='peer';
-        // close BC since PeerJS won
-        try{ if(bcGuest) bcGuest.close(); }catch(e){} bcGuest=null;
-        conn.send({type:'JOIN',from:myName}); setStatus('');
-      });
-      conn.on('data', msg=>{
-        if(activeTransport==='peer') handleMessage(msg);
-      });
-      conn.on('close', onDisconnect);
-      conn.on('error',()=>{ setStatus('Could not reach host. Are they waiting?','var(--accent)'); });
-    });
-    peer.on('error', err=>{
-      setStatus('Connection failed: '+(err.message||err.type),'var(--accent)');
-    });
-  }, 500);
+  peer.on('open',()=>{
+    conn=peer.connect(toPeerId(opName),{reliable:true});
+    conn.on('open',()=>{ conn.send({type:'JOIN',from:myName}); setStatus(''); });
+    conn.on('data', handleMessage);
+    conn.on('close', onDisconnect);
+    conn.on('error',()=>{ setStatus("Could not reach host. Are they waiting?",'var(--accent)'); });
+  });
+
+  peer.on('error', err=>{
+    setStatus('Connection failed: '+(err.message||err.type),'var(--accent)');
+  });
 }
 
-function cancelWait(){ destroyAll(); showScreen('lobby'); }
+function cancelWait(){ destroyPeer(); showScreen('lobby'); }
 
 function onDisconnect(){
   clearInterval(timerInterval);
   document.getElementById('result-overlay').classList.remove('show');
   if(!document.getElementById('game').classList.contains('hidden')){
-    myScore=TOTAL_ROUNDS; opScore=0;
+    // Opponent left during the game — remaining player wins
+    myScore = TOTAL_ROUNDS; opScore = 0;
     endGame();
-    document.getElementById('go-winner-label').textContent=`🏆 ${myUsername} WINS — Opponent left!`;
+    // Override winner label to reflect forfeit
+    document.getElementById('go-winner-label').textContent = `🏆 ${myUsername} WINS — Opponent left!`;
   } else {
     goLobby();
   }
@@ -835,7 +721,6 @@ function startRound(){
   myChoice=null; opChoice=null; roundActive=true; timeLeft=ROUND_TIME;
   clearInterval(timerInterval);
   clearBoxSelections(); updateInstruction(); updateTimerDisplay(); buildPips();
-  resetCursorDir();
   document.querySelectorAll('.shadow-box').forEach((b,i)=>{
     b.style.opacity='0'; b.style.transform='scale(0.7)';
     setTimeout(()=>{ b.style.transition='opacity 0.3s, transform 0.3s'; b.style.opacity='1'; b.style.transform=''; }, i*80);
@@ -878,7 +763,6 @@ function clearBoxSelections(){
 function selectBox(idx, auto=false){
   if(!roundActive||myChoice!==null) return;
   myChoice=idx; roundActive=false;
-  animateCursorForDir(idx);  // point hand / look with eyes in chosen direction
   const box=document.querySelector(`.shadow-box[data-idx="${idx}"]`);
   box.classList.add(myRole==='pointer'?'selected-pointer':'selected-looker');
   const r=box.getBoundingClientRect();
@@ -1024,7 +908,7 @@ function playAgain(){
   } else { goLobby(); }
 }
 
-function goLobby(){ destroyAll(); setCursorMode('hand'); showScreen('lobby'); }
+function goLobby(){ destroyPeer(); setCursorMode('hand'); showScreen('lobby'); }
 
 // ════════════════════════════════════
 //  KEYBOARD — WASD + ARROWS
