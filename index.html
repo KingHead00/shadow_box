@@ -282,6 +282,112 @@
 
   #particles { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
   .mt8 { margin-top: 8px; }
+
+  /* ══════════════════════════════════
+     ROLE AVATAR PANEL
+  ══════════════════════════════════ */
+  #role-avatar {
+    position: fixed; left: 18px; top: 50%; transform: translateY(-50%);
+    z-index: 14; display: none; flex-direction: column; align-items: center;
+    pointer-events: none;
+  }
+  @media (max-width: 880px) { #role-avatar { display: none !important; } }
+
+  .av-panel {
+    background: #08080f; border: 1px solid #1e1e30; border-radius: 8px;
+    padding: 14px 10px 10px; display: flex; flex-direction: column;
+    align-items: center; gap: 8px; position: relative; overflow: hidden; width: 152px;
+  }
+  .av-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    transition: background 0.5s;
+  }
+  .av-panel.is-pointer::before { background: linear-gradient(90deg,#ff3c3c,#ff8800); }
+  .av-panel.is-looker::before  { background: linear-gradient(90deg,#3cffcf,#00aaff); }
+  .av-panel::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+  }
+
+  .av-role-label {
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+    letter-spacing: 5px; text-transform: uppercase;
+  }
+  .av-panel.is-pointer .av-role-label { color: #ff3c3c; }
+  .av-panel.is-looker  .av-role-label { color: #3cffcf; }
+
+  .av-status {
+    font-size: 8px; letter-spacing: 2px; color: #444460;
+    text-transform: uppercase; text-align: center; min-height: 11px;
+    transition: color 0.3s;
+  }
+  .av-panel.is-pointer .av-status.chosen { color: #ff6666; }
+  .av-panel.is-looker  .av-status.chosen { color: #3cffcf; }
+
+  /* ── HAND WRAPPER ── */
+  #av-hand-wrap {
+    display: none; width: 124px; height: 124px;
+    align-items: center; justify-content: center; position: relative;
+  }
+  #av-hand-wrap svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 10px #ff3c3c55);
+    transform-origin: 50% 60%;
+    transition: transform 0.38s cubic-bezier(0.34,1.56,0.64,1),
+                filter 0.3s;
+  }
+  #av-hand-wrap.idle svg   { animation: avHandFloat 3.2s ease-in-out infinite; }
+  #av-hand-wrap.chosen svg { animation: avHandPop 0.45s cubic-bezier(0.22,1.5,0.5,1) both; }
+  @keyframes avHandFloat {
+    0%,100% { transform: translateY(0)   rotate(-1.5deg); }
+    40%      { transform: translateY(-6px) rotate( 1.5deg); }
+    70%      { transform: translateY(-3px) rotate(-0.5deg); }
+  }
+  @keyframes avHandPop {
+    0%   { transform: scale(0.88); }
+    60%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  #av-tip-glow  { animation: avTipIdle 2.4s ease-in-out infinite; }
+  #av-tip-glow2 { animation: avTipIdle 2.4s ease-in-out infinite 0.4s; }
+  @keyframes avTipIdle {
+    0%,100% { opacity: 0;    r: 9; }
+    50%      { opacity: 0.28; r: 13; }
+  }
+  #av-hand-wrap.chosen #av-tip-glow  { animation: avTipBurst 0.7s ease-out forwards; }
+  #av-hand-wrap.chosen #av-tip-glow2 { animation: avTipBurst2 0.7s ease-out forwards 0.05s; }
+  @keyframes avTipBurst  { 0%{opacity:0}15%{opacity:1}100%{opacity:0.15} }
+  @keyframes avTipBurst2 { 0%{opacity:0}15%{opacity:0.6}100%{opacity:0} }
+
+  /* ── FACE WRAPPER ── */
+  #av-face-wrap {
+    display: none; width: 128px; height: 118px;
+    align-items: center; justify-content: center; position: relative;
+  }
+  #av-face-wrap svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 10px #3cffcf33);
+  }
+  #av-face-wrap.idle svg { animation: avFaceBreath 4.5s ease-in-out infinite; }
+  @keyframes avFaceBreath {
+    0%,100% { transform: scale(1)     translateY(0); }
+    50%      { transform: scale(1.016) translateY(-1px); }
+  }
+  /* Iris/pupil CSS transitions for smooth eye movement */
+  #av-irl-o,#av-irl-m,#av-irl-b,#av-irl-i,#av-pul,#av-pul-d,#av-cal,#av-ca2l,
+  #av-irr-o,#av-irr-m,#av-irr-b,#av-irr-i,#av-pur,#av-pur-d,#av-car,#av-ca2r {
+    transition: cx 0.32s cubic-bezier(0.34,1.3,0.64,1),
+                cy 0.32s cubic-bezier(0.34,1.3,0.64,1);
+  }
+  /* Blink overlay fade */
+  #av-eyelid-l, #av-eyelid-r { transition: opacity 0.06s; }
+  #av-glow-eyes { transition: opacity 0.35s; }
+  /* Eyebrow raise transition */
+  #av-brow-l,#av-brow-l2,#av-brow-r,#av-brow-r2 {
+    transition: transform 0.3s cubic-bezier(0.34,1.4,0.64,1);
+    transform-box: fill-box; transform-origin: center;
+  }
 </style>
 </head>
 <body>
@@ -323,6 +429,259 @@
 <canvas id="particles"></canvas>
 <div id="bg-grid"></div>
 <div id="scanlines"></div>
+
+<!-- ══ ROLE AVATAR PANEL ══ -->
+<div id="role-avatar">
+  <div class="av-panel">
+    <div class="av-role-label">POINTER</div>
+
+    <!-- ═══ DETAILED HAND (points UP by default, rotated via JS) ═══ -->
+    <div id="av-hand-wrap">
+      <svg id="av-hand-svg" viewBox="0 0 90 115" fill="none">
+        <!-- Wrist -->
+        <rect x="22" y="92" width="46" height="22" rx="10" fill="#a81515"/>
+        <rect x="26" y="89" width="38" height="9"  rx="5"  fill="#be1e1e"/>
+        <path d="M27 93 Q45 90 63 93" stroke="#901212" stroke-width="1"   fill="none" opacity="0.6"/>
+        <path d="M27 97 Q45 95 63 97" stroke="#901212" stroke-width="0.7" fill="none" opacity="0.4"/>
+        <!-- Palm body -->
+        <path d="M18 91 Q13 71 15 55 Q17 46 24 44 Q32 41 45 41 Q58 41 66 44 Q73 46 75 55 Q77 71 72 91 Z" fill="#d02020"/>
+        <!-- Palm back highlight -->
+        <ellipse cx="45" cy="65" rx="20" ry="16" fill="#e03535" opacity="0.38"/>
+        <!-- Palm edge shadows -->
+        <path d="M18 91 Q14 72 17 57" stroke="#981212" stroke-width="3" fill="none" opacity="0.4" stroke-linecap="round"/>
+        <path d="M72 91 Q76 72 73 57" stroke="#981212" stroke-width="3" fill="none" opacity="0.4" stroke-linecap="round"/>
+        <!-- Palm crease lines -->
+        <path d="M22 71 Q38 67 60 70 Q66 71 70 74" stroke="#a01212" stroke-width="0.9" fill="none" opacity="0.55"/>
+        <path d="M21 81 Q45 77 70 81"               stroke="#a01212" stroke-width="0.7" fill="none" opacity="0.4"/>
+        <path d="M29 80 Q33 68 38 57"               stroke="#a01212" stroke-width="0.6" fill="none" opacity="0.38"/>
+        <!-- Knuckle ridge -->
+        <ellipse cx="45" cy="44" rx="24" ry="5" fill="#be1c1c" opacity="0.75"/>
+        <circle cx="30"   cy="44"   r="3"   fill="#a81414" opacity="0.72"/>
+        <circle cx="45"   cy="42.5" r="3"   fill="#a81414" opacity="0.72"/>
+        <circle cx="57.5" cy="43.5" r="3"   fill="#a81414" opacity="0.72"/>
+        <circle cx="67.5" cy="46"   r="2.5" fill="#a81414" opacity="0.72"/>
+        <!-- ═ INDEX FINGER — FULLY EXTENDED ═ -->
+        <!-- Proximal phalanx -->
+        <rect x="26" y="33" width="17" height="19" rx="4.5" fill="#cc2020"/>
+        <rect x="26" y="34" width="4"  height="17" rx="2"   fill="#aa1010" opacity="0.28"/>
+        <rect x="37" y="34" width="4"  height="17" rx="2"   fill="white"   opacity="0.07"/>
+        <!-- Middle phalanx -->
+        <rect x="26.5" y="13" width="16" height="22" rx="4" fill="#d42828"/>
+        <rect x="26.5" y="14" width="3.5" height="20" rx="1.5" fill="#aa1010" opacity="0.25"/>
+        <rect x="37.5" y="14" width="3.5" height="20" rx="1.5" fill="white" opacity="0.07"/>
+        <!-- Distal phalanx / tip -->
+        <rect x="27" y="1" width="15" height="15" rx="7.5" fill="#da2e2e"/>
+        <ellipse cx="34.5" cy="7" rx="5" ry="6.5" fill="#ec4444" opacity="0.32"/>
+        <!-- Fingernail -->
+        <rect x="29" y="2.5" width="11" height="12" rx="4.5" fill="#ff9999" opacity="0.4"/>
+        <rect x="30" y="3.5" width="9"  height="9"  rx="3.5" fill="#ffcccc" opacity="0.28"/>
+        <ellipse cx="32" cy="5.5" rx="2.5" ry="3"   fill="white" opacity="0.2"/>
+        <!-- Cuticle line -->
+        <path d="M29 14 Q34.5 13 40 14" stroke="#b81616" stroke-width="0.8" fill="none" opacity="0.5"/>
+        <!-- Knuckle crease lines (proximal/middle joint) -->
+        <line x1="26.5" y1="33"   x2="43"   y2="33"   stroke="#b01414" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="27"   y1="36.5" x2="42.5" y2="36.5" stroke="#b01414" stroke-width="0.6" stroke-linecap="round" opacity="0.4"/>
+        <!-- Middle/distal joint -->
+        <line x1="27"   y1="14.5" x2="42"   y2="14.5" stroke="#bc1818" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="27.5" y1="17.5" x2="41.5" y2="17.5" stroke="#bc1818" stroke-width="0.5" stroke-linecap="round" opacity="0.4"/>
+        <!-- ═ MIDDLE FINGER — FOLDED ═ -->
+        <rect x="44" y="25" width="15" height="22" rx="5" fill="#c41c1c"/>
+        <ellipse cx="51.5" cy="25" rx="7.5" ry="7" fill="#b81818"/>
+        <rect x="44" y="27" width="4" height="18" rx="2" fill="#9a1010" opacity="0.35"/>
+        <rect x="54" y="27" width="4" height="18" rx="2" fill="white"   opacity="0.07"/>
+        <ellipse cx="51.5" cy="26" rx="5.5" ry="3.5" fill="#d43030" opacity="0.22"/>
+        <line x1="44.5" y1="36" x2="58.5" y2="36" stroke="#a01515" stroke-width="1.1" stroke-linecap="round"/>
+        <line x1="45"   y1="39" x2="58"   y2="39" stroke="#a01515" stroke-width="0.5" stroke-linecap="round" opacity="0.35"/>
+        <!-- ═ RING FINGER — MORE FOLDED ═ -->
+        <rect x="60" y="28" width="13" height="20" rx="5" fill="#bc1818"/>
+        <ellipse cx="66.5" cy="28" rx="6.5" ry="6" fill="#b01515"/>
+        <rect x="60" y="30" width="3.5" height="16" rx="1.5" fill="#981010" opacity="0.35"/>
+        <rect x="69" y="30" width="3.5" height="16" rx="1.5" fill="white"   opacity="0.06"/>
+        <ellipse cx="66.5" cy="29" rx="4.5" ry="3" fill="#d03030" opacity="0.22"/>
+        <line x1="60.5" y1="38" x2="72.5" y2="38" stroke="#9a1212" stroke-width="1" stroke-linecap="round"/>
+        <!-- ═ PINKY — MOST FOLDED ═ -->
+        <rect x="74" y="33" width="10" height="16" rx="5" fill="#b41616"/>
+        <ellipse cx="79" cy="33" rx="5" ry="5" fill="#a81414"/>
+        <rect x="74" y="35" width="3" height="12" rx="1.5" fill="#901010" opacity="0.35"/>
+        <ellipse cx="79" cy="33.5" rx="3.5" ry="2.5" fill="#cc2828" opacity="0.22"/>
+        <line x1="74.5" y1="43" x2="83.5" y2="43" stroke="#941414" stroke-width="0.9" stroke-linecap="round"/>
+        <!-- ═ THUMB ═ -->
+        <g transform="rotate(-30, 16, 63)">
+          <rect x="5"  y="52" width="17" height="24" rx="8" fill="#c41c1c"/>
+          <rect x="6"  y="46" width="15" height="19" rx="7.5" fill="#cc2020"/>
+          <ellipse cx="13.5" cy="46" rx="7.5" ry="7" fill="#bf1c1c"/>
+          <rect x="6"  y="48" width="4" height="22" rx="2" fill="#a01010" opacity="0.3"/>
+          <rect x="16" y="48" width="3.5" height="22" rx="1.5" fill="white" opacity="0.07"/>
+          <!-- Thumb nail -->
+          <ellipse cx="13.5" cy="47" rx="5.5" ry="5" fill="#ff9999" opacity="0.36"/>
+          <ellipse cx="11.8" cy="46" rx="2.8" ry="3.2" fill="white" opacity="0.18"/>
+          <!-- Thumb knuckle -->
+          <ellipse cx="13.5" cy="56" rx="8" ry="4.5" fill="#b41818" opacity="0.65"/>
+          <line x1="6" y1="62" x2="22" y2="62" stroke="#a01515" stroke-width="1.1" stroke-linecap="round"/>
+          <line x1="7" y1="65" x2="21" y2="65" stroke="#a01515" stroke-width="0.5" stroke-linecap="round" opacity="0.4"/>
+        </g>
+        <!-- ═ GLOW EFFECTS (animated) ═ -->
+        <circle id="av-tip-glow"  cx="34.5" cy="5"  r="10" fill="#ff3c3c" opacity="0"/>
+        <circle id="av-tip-glow2" cx="34.5" cy="5"  r="18" fill="none" stroke="#ff3c3c" stroke-width="2" opacity="0"/>
+        <!-- Overall outline glow ring -->
+        <ellipse cx="45" cy="56" rx="40" ry="50" fill="none" stroke="#ff3c3c" stroke-width="1.5" opacity="0.1"/>
+      </svg>
+    </div>
+
+    <!-- ═══ DETAILED FACE ═══ -->
+    <div id="av-face-wrap">
+      <svg id="av-face-svg" viewBox="0 0 100 112" fill="none">
+        <!-- Neck -->
+        <rect x="37" y="98" width="26" height="14" rx="7" fill="#081e1e"/>
+        <!-- Head -->
+        <ellipse cx="50" cy="56" rx="41" ry="47" fill="#0c2424"/>
+        <!-- Forehead glow -->
+        <ellipse cx="50" cy="24" rx="26" ry="17" fill="#102e2e" opacity="0.55"/>
+        <!-- Cheekbone -->
+        <ellipse cx="21" cy="61" rx="12" ry="8" fill="#102828" opacity="0.45"/>
+        <ellipse cx="79" cy="61" rx="12" ry="8" fill="#102828" opacity="0.45"/>
+        <!-- Temple shadow -->
+        <ellipse cx="13" cy="47" rx="9"  ry="13" fill="#061515" opacity="0.5"/>
+        <ellipse cx="87" cy="47" rx="9"  ry="13" fill="#061515" opacity="0.5"/>
+        <!-- Jaw shadow -->
+        <ellipse cx="50" cy="95" rx="30" ry="13" fill="#050f0f" opacity="0.55"/>
+        <!-- Hair -->
+        <ellipse cx="50" cy="11" rx="39" ry="18" fill="#050d0d"/>
+        <path d="M11 18 Q50 2 89 18 Q85 8 50 5 Q15 8 11 18 Z" fill="#061212"/>
+        <path d="M18 16 Q34 8 50 9"  stroke="#0a2020" stroke-width="1.3" fill="none" opacity="0.65"/>
+        <path d="M29 13 Q50 7 71 13"  stroke="#0a2020" stroke-width="1"   fill="none" opacity="0.45"/>
+        <path d="M82 16 Q66 8 50 9"   stroke="#0a2020" stroke-width="1.3" fill="none" opacity="0.65"/>
+        <!-- Ears -->
+        <ellipse cx="9"  cy="54" rx="7" ry="10" fill="#0c2424" stroke="#1a4848" stroke-width="1"/>
+        <path d="M5 47 Q3 54 5 61" stroke="#1a4848" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        <ellipse cx="9"  cy="54" rx="3.5" ry="6" fill="#061515"/>
+        <path d="M7 49 Q5 54 7 59"  stroke="#1a4848" stroke-width="0.8" fill="none" opacity="0.6"/>
+        <ellipse cx="9"  cy="62" rx="4" ry="3" fill="#0c2424"/>
+        <ellipse cx="91" cy="54" rx="7" ry="10" fill="#0c2424" stroke="#1a4848" stroke-width="1"/>
+        <path d="M95 47 Q97 54 95 61" stroke="#1a4848" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        <ellipse cx="91" cy="54" rx="3.5" ry="6" fill="#061515"/>
+        <path d="M93 49 Q95 54 93 59" stroke="#1a4848" stroke-width="0.8" fill="none" opacity="0.6"/>
+        <ellipse cx="91" cy="62" rx="4" ry="3" fill="#0c2424"/>
+        <!-- Forehead lines -->
+        <path d="M27 30 Q50 26 73 30" stroke="#1a4040" stroke-width="0.5" fill="none" opacity="0.38"/>
+        <path d="M33 24 Q50 20 67 24" stroke="#1a4040" stroke-width="0.4" fill="none" opacity="0.28"/>
+        <!-- Brow ridge shadow -->
+        <path d="M15 36 Q50 31 85 36" stroke="#060f0f" stroke-width="7" fill="none" opacity="0.35" stroke-linecap="round"/>
+        <!-- ═ EYEBROWS ═ -->
+        <path id="av-brow-l"  d="M13 35 Q21 30 35 33" stroke="#3cffcf" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+        <path id="av-brow-l2" d="M14 36 Q22 31.5 35 34" stroke="#3cffcf" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.32"/>
+        <path id="av-brow-r"  d="M65 33 Q79 30 87 35" stroke="#3cffcf" stroke-width="2.3" stroke-linecap="round" fill="none"/>
+        <path id="av-brow-r2" d="M65 34 Q79 31.5 86 36" stroke="#3cffcf" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.32"/>
+        <!-- ═ LEFT EYE ═ -->
+        <!-- Socket -->
+        <ellipse cx="28" cy="45" rx="14" ry="11" fill="#040c0c" opacity="0.9"/>
+        <!-- Sclera -->
+        <ellipse cx="28" cy="45" rx="12" ry="9" fill="#c5ede8"/>
+        <!-- Sclera veins -->
+        <path d="M16.5 44.5 Q22 45 27 44.5" stroke="#ffaaaa" stroke-width="0.5" fill="none" opacity="0.22"/>
+        <path d="M29 44.5 Q33 45 39 44"     stroke="#ffaaaa" stroke-width="0.4" fill="none" opacity="0.18"/>
+        <!-- Corner shadows -->
+        <ellipse cx="16.5" cy="45" rx="2.5" ry="3.5" fill="#061515" opacity="0.65"/>
+        <ellipse cx="39.5" cy="45" rx="2.5" ry="3.5" fill="#061515" opacity="0.65"/>
+        <!-- Iris layers (have IDs for JS movement) -->
+        <ellipse id="av-irl-o"    cx="28" cy="45" rx="7"   ry="7"   fill="#0c4a3a"/>
+        <ellipse id="av-irl-m"    cx="28" cy="45" rx="6"   ry="6"   fill="#197860"/>
+        <ellipse id="av-irl-b"    cx="28" cy="45" rx="4.8" ry="4.8" fill="#20a578"/>
+        <ellipse id="av-irl-i"    cx="28" cy="45" rx="3.5" ry="3.5" fill="#189068"/>
+        <!-- Pupil -->
+        <ellipse id="av-pul"      cx="28" cy="45" rx="2.8" ry="2.8" fill="#00100c"/>
+        <ellipse id="av-pul-d"    cx="28" cy="45" rx="1.4" ry="1.4" fill="#000806"/>
+        <!-- Catchlights -->
+        <ellipse id="av-cal"      cx="26.2" cy="43.2" rx="1.4" ry="1.4" fill="white" opacity="0.92"/>
+        <ellipse id="av-ca2l"     cx="30"   cy="46.5" rx="0.7" ry="0.7" fill="white" opacity="0.55"/>
+        <!-- Iris glow ring -->
+        <ellipse id="av-irl-glow" cx="28" cy="45" rx="7" ry="7" fill="none" stroke="#3cffcf" stroke-width="1.2" opacity="0.35"/>
+        <!-- Eyelid blink overlay (opacity driven by JS) -->
+        <clipPath id="eyeClipL"><ellipse cx="28" cy="45" rx="12" ry="9"/></clipPath>
+        <rect id="av-eyelid-l" x="16" y="36" width="24" height="18" fill="#071818" opacity="0" clip-path="url(#eyeClipL)"/>
+        <!-- Upper lid line + shadow -->
+        <path d="M16.5 40 Q28 36.5 39.5 40 Q28 42 16.5 40 Z" fill="#040c0c" opacity="0.48"/>
+        <path d="M16.5 40 Q28 36.5 39.5 40" stroke="#3cffcf" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <!-- Lower lid -->
+        <path d="M16.5 50 Q28 53.5 39.5 50" stroke="#1a6050" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.65"/>
+        <!-- Upper eyelashes -->
+        <line x1="17.5" y1="40.5" x2="15.5" y2="37"   stroke="#3cffcf" stroke-width="0.9" opacity="0.85"/>
+        <line x1="20.5" y1="38.5" x2="19.5" y2="35.5" stroke="#3cffcf" stroke-width="0.9" opacity="0.85"/>
+        <line x1="23.5" y1="37.5" x2="23.5" y2="34.5" stroke="#3cffcf" stroke-width="1"   opacity="0.9"/>
+        <line x1="27"   y1="36.5" x2="27"   y2="33.5" stroke="#3cffcf" stroke-width="1.1" opacity="0.95"/>
+        <line x1="30.5" y1="37"   x2="31"   y2="34"   stroke="#3cffcf" stroke-width="1"   opacity="0.9"/>
+        <line x1="33.5" y1="38"   x2="35"   y2="35"   stroke="#3cffcf" stroke-width="0.9" opacity="0.85"/>
+        <line x1="37"   y1="40"   x2="39"   y2="37.5" stroke="#3cffcf" stroke-width="0.8" opacity="0.78"/>
+        <!-- Lower lashes -->
+        <line x1="20" y1="50"   x2="19"   y2="52.5" stroke="#1a6050" stroke-width="0.6" opacity="0.45"/>
+        <line x1="25" y1="52"   x2="25"   y2="54.5" stroke="#1a6050" stroke-width="0.6" opacity="0.45"/>
+        <line x1="31" y1="52"   x2="31.5" y2="54.5" stroke="#1a6050" stroke-width="0.6" opacity="0.45"/>
+        <line x1="36" y1="50.5" x2="37.5" y2="53"   stroke="#1a6050" stroke-width="0.5" opacity="0.4"/>
+        <!-- ═ RIGHT EYE ═ -->
+        <ellipse cx="72" cy="45" rx="14" ry="11" fill="#040c0c" opacity="0.9"/>
+        <ellipse cx="72" cy="45" rx="12" ry="9"  fill="#c5ede8"/>
+        <path d="M60.5 44.5 Q66 45 71 44.5" stroke="#ffaaaa" stroke-width="0.5" fill="none" opacity="0.22"/>
+        <path d="M73 44.5 Q77 45 83.5 44"   stroke="#ffaaaa" stroke-width="0.4" fill="none" opacity="0.18"/>
+        <ellipse cx="60.5" cy="45" rx="2.5" ry="3.5" fill="#061515" opacity="0.65"/>
+        <ellipse cx="83.5" cy="45" rx="2.5" ry="3.5" fill="#061515" opacity="0.65"/>
+        <ellipse id="av-irr-o"    cx="72" cy="45" rx="7"   ry="7"   fill="#0c4a3a"/>
+        <ellipse id="av-irr-m"    cx="72" cy="45" rx="6"   ry="6"   fill="#197860"/>
+        <ellipse id="av-irr-b"    cx="72" cy="45" rx="4.8" ry="4.8" fill="#20a578"/>
+        <ellipse id="av-irr-i"    cx="72" cy="45" rx="3.5" ry="3.5" fill="#189068"/>
+        <ellipse id="av-pur"      cx="72" cy="45" rx="2.8" ry="2.8" fill="#00100c"/>
+        <ellipse id="av-pur-d"    cx="72" cy="45" rx="1.4" ry="1.4" fill="#000806"/>
+        <ellipse id="av-car"      cx="70.2" cy="43.2" rx="1.4" ry="1.4" fill="white" opacity="0.92"/>
+        <ellipse id="av-ca2r"     cx="73.8" cy="46.5" rx="0.7" ry="0.7" fill="white" opacity="0.55"/>
+        <ellipse id="av-irr-glow" cx="72" cy="45" rx="7" ry="7" fill="none" stroke="#3cffcf" stroke-width="1.2" opacity="0.35"/>
+        <clipPath id="eyeClipR"><ellipse cx="72" cy="45" rx="12" ry="9"/></clipPath>
+        <rect id="av-eyelid-r" x="60" y="36" width="24" height="18" fill="#071818" opacity="0" clip-path="url(#eyeClipR)"/>
+        <path d="M60.5 40 Q72 36.5 83.5 40 Q72 42 60.5 40 Z" fill="#040c0c" opacity="0.48"/>
+        <path d="M60.5 40 Q72 36.5 83.5 40" stroke="#3cffcf" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M60.5 50 Q72 53.5 83.5 50"  stroke="#1a6050" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.65"/>
+        <line x1="61.5" y1="40.5" x2="59.5" y2="37"   stroke="#3cffcf" stroke-width="0.9" opacity="0.85"/>
+        <line x1="64.5" y1="38.5" x2="63.5" y2="35.5" stroke="#3cffcf" stroke-width="0.9" opacity="0.85"/>
+        <line x1="67.5" y1="37.5" x2="67.5" y2="34.5" stroke="#3cffcf" stroke-width="1"   opacity="0.9"/>
+        <line x1="71"   y1="36.5" x2="71"   y2="33.5" stroke="#3cffcf" stroke-width="1.1" opacity="0.95"/>
+        <line x1="74.5" y1="37"   x2="75"   y2="34"   stroke="#3cffcf" stroke-width="1"   opacity="0.9"/>
+        <line x1="77.5" y1="38"   x2="79"   y2="35"   stroke="#3cffcf" stroke-width="0.9" opacity="0.85"/>
+        <line x1="81"   y1="40"   x2="83"   y2="37.5" stroke="#3cffcf" stroke-width="0.8" opacity="0.78"/>
+        <line x1="64" y1="50"   x2="63"   y2="52.5" stroke="#1a6050" stroke-width="0.6" opacity="0.45"/>
+        <line x1="69" y1="52"   x2="69"   y2="54.5" stroke="#1a6050" stroke-width="0.6" opacity="0.45"/>
+        <line x1="75" y1="52"   x2="75.5" y2="54.5" stroke="#1a6050" stroke-width="0.6" opacity="0.45"/>
+        <line x1="80" y1="50.5" x2="81.5" y2="53"   stroke="#1a6050" stroke-width="0.5" opacity="0.4"/>
+        <!-- ═ NOSE ═ -->
+        <path d="M44 51 Q43.5 57 42 65" stroke="#1a4040" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.55"/>
+        <path d="M56 51 Q56.5 57 58 65" stroke="#1a4040" stroke-width="1.3" stroke-linecap="round" fill="none" opacity="0.55"/>
+        <path d="M49 51 Q50 55 50 59"   stroke="#206060" stroke-width="0.6" fill="none" opacity="0.4"/>
+        <ellipse cx="50" cy="67" rx="7.5" ry="5.5" fill="#0d2828" opacity="0.5"/>
+        <ellipse cx="44" cy="68" rx="3.5" ry="3"   fill="#050f0f" opacity="0.82"/>
+        <ellipse cx="56" cy="68" rx="3.5" ry="3"   fill="#050f0f" opacity="0.82"/>
+        <ellipse cx="43" cy="67" rx="2"   ry="1.3" fill="#1a4040" opacity="0.42"/>
+        <ellipse cx="57" cy="67" rx="2"   ry="1.3" fill="#1a4040" opacity="0.42"/>
+        <!-- ═ PHILTRUM ═ -->
+        <path d="M47 70 Q48.5 73 47 77" stroke="#1a4040" stroke-width="0.6" fill="none" opacity="0.4"/>
+        <path d="M53 70 Q51.5 73 53 77" stroke="#1a4040" stroke-width="0.6" fill="none" opacity="0.4"/>
+        <!-- ═ MOUTH ═ -->
+        <path d="M35 79 Q43 75 50 76 Q57 75 65 79" stroke="#1a5555" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+        <path d="M35 79 Q50 87 65 79"               stroke="#1a5555" stroke-width="1.9" stroke-linecap="round" fill="none"/>
+        <path d="M35 79 Q43 76 50 77 Q57 76 65 79 Q50 87.5 35 79 Z" fill="#0d3535" opacity="0.38"/>
+        <ellipse cx="50" cy="81.5" rx="10" ry="3.5" fill="#1a5555" opacity="0.22"/>
+        <path d="M35 79 Q50 80 65 79" stroke="#060f0f" stroke-width="0.8" fill="none" opacity="0.5"/>
+        <circle cx="35" cy="79" r="1.8" fill="#1a5555" opacity="0.5"/>
+        <circle cx="65" cy="79" r="1.8" fill="#1a5555" opacity="0.5"/>
+        <!-- ═ CHIN ═ -->
+        <ellipse cx="50" cy="95" rx="17" ry="8"   fill="#060f0f" opacity="0.42"/>
+        <path d="M42 92 Q50 96 58 92" stroke="#1a4040" stroke-width="0.5" fill="none" opacity="0.32"/>
+        <!-- ═ OUTER GLOW ═ -->
+        <ellipse cx="50" cy="56" rx="43" ry="49" fill="none" stroke="#3cffcf" stroke-width="1.5" opacity="0.1"/>
+        <!-- Eye area glow (activated on pick) -->
+        <ellipse id="av-glow-eyes" cx="50" cy="45" rx="38" ry="18" fill="none" stroke="#3cffcf" stroke-width="2" opacity="0"/>
+      </svg>
+    </div>
+
+    <div class="av-status">Choose a direction</div>
+  </div>
+</div>
 
 <!-- LOBBY -->
 <div class="screen" id="lobby">
@@ -644,7 +1003,10 @@ function startGame(hosting){
   buildGrid(); updateHUD(); updateRoleBadge();
   showScreen('game'); updateCursorForRole(); startRound();
 }
-function updateCursorForRole(){ setCursorMode(myRole==='pointer'?'hand':'face'); }
+function updateCursorForRole(){
+  setCursorMode(myRole==='pointer'?'hand':'face');
+  showRoleAvatar(myRole);
+}
 
 // ════════════════════════════════════
 //  DIRECTIONS
@@ -721,6 +1083,7 @@ function startRound(){
   myChoice=null; opChoice=null; roundActive=true; timeLeft=ROUND_TIME;
   clearInterval(timerInterval);
   clearBoxSelections(); updateInstruction(); updateTimerDisplay(); buildPips();
+  resetAvatarForRound();
   document.querySelectorAll('.shadow-box').forEach((b,i)=>{
     b.style.opacity='0'; b.style.transform='scale(0.7)';
     setTimeout(()=>{ b.style.transition='opacity 0.3s, transform 0.3s'; b.style.opacity='1'; b.style.transform=''; }, i*80);
@@ -763,6 +1126,7 @@ function clearBoxSelections(){
 function selectBox(idx, auto=false){
   if(!roundActive||myChoice!==null) return;
   myChoice=idx; roundActive=false;
+  animateAvatarChoice(idx);
   const box=document.querySelector(`.shadow-box[data-idx="${idx}"]`);
   box.classList.add(myRole==='pointer'?'selected-pointer':'selected-looker');
   const r=box.getBoundingClientRect();
@@ -876,7 +1240,7 @@ function updateInstruction(){
 //  GAME OVER
 // ════════════════════════════════════
 function endGame(){
-  setCursorMode('hand'); showScreen('gameover');
+  setCursorMode('hand'); hideRoleAvatar(); showScreen('gameover');
   document.getElementById('go-score-left').textContent =myScore;
   document.getElementById('go-score-right').textContent=opScore;
   document.getElementById('go-name-left').textContent  =myUsername;
@@ -908,7 +1272,7 @@ function playAgain(){
   } else { goLobby(); }
 }
 
-function goLobby(){ destroyPeer(); setCursorMode('hand'); showScreen('lobby'); }
+function goLobby(){ destroyPeer(); hideRoleAvatar(); setCursorMode('hand'); showScreen('lobby'); }
 
 // ════════════════════════════════════
 //  KEYBOARD — WASD + ARROWS
@@ -923,6 +1287,164 @@ document.addEventListener('keydown', e=>{
 
 document.getElementById('username-input').addEventListener('keydown',e=>{ if(e.key==='Enter') createRoom(); });
 document.getElementById('join-input').addEventListener('keydown',    e=>{ if(e.key==='Enter') joinRoom();  });
+
+// ════════════════════════════════════
+//  ROLE AVATAR — detailed hand / face
+// ════════════════════════════════════
+let _blinkTimer=null, _scanTimer=null;
+
+function showRoleAvatar(role){
+  const av=document.getElementById('role-avatar');
+  const panel=av.querySelector('.av-panel');
+  const hw=document.getElementById('av-hand-wrap');
+  const fw=document.getElementById('av-face-wrap');
+  av.style.display='flex';
+  panel.className='av-panel is-'+role;
+  av.querySelector('.av-role-label').textContent=role==='pointer'?'POINTER':'LOOKER';
+  if(role==='pointer'){
+    hw.style.display='flex'; fw.style.display='none';
+    hw.className='idle';
+    document.getElementById('av-hand-svg').style.transform='';
+  } else {
+    hw.style.display='none'; fw.style.display='flex';
+    fw.className='idle';
+    _resetEyes(); _startFaceIdle();
+  }
+  _setAvStatus('Choose a direction',false);
+}
+
+function hideRoleAvatar(){
+  document.getElementById('role-avatar').style.display='none';
+  _stopFaceIdle();
+}
+
+function _setAvStatus(msg,chosen){
+  const el=document.getElementById('role-avatar').querySelector('.av-status');
+  el.textContent=msg;
+  el.className='av-status'+(chosen?' chosen':'');
+}
+
+// ── HAND: rotate to point chosen direction ──
+// Hand SVG points UP by default → 0=up,1=left,2=right,3=down
+const _HAND_ROT={0:0,1:-90,2:90,3:180};
+const _DIR_LABELS=['UP','LEFT','RIGHT','DOWN'];
+
+function animateAvatarChoice(idx){
+  if(myRole==='pointer'){
+    const hw=document.getElementById('av-hand-wrap');
+    hw.className='chosen';
+    document.getElementById('av-hand-svg').style.transform=`rotate(${_HAND_ROT[idx]??0}deg)`;
+    _setAvStatus('POINTED '+_DIR_LABELS[idx],true);
+  } else {
+    _animateFaceChoice(idx);
+    _setAvStatus('LOOKED '+_DIR_LABELS[idx],true);
+  }
+}
+
+function resetAvatarForRound(){
+  if(myRole==='pointer'){
+    const hw=document.getElementById('av-hand-wrap');
+    hw.className='idle';
+    document.getElementById('av-hand-svg').style.transform='';
+  } else {
+    _resetFaceChosen();
+  }
+  _setAvStatus('Choose a direction',false);
+}
+
+// ── FACE: move iris/pupil/catchlights to look in direction ──
+// Default cx/cy for each eye part
+const _LEYEDEF={
+  'av-irl-o':{cx:28,cy:45},'av-irl-m':{cx:28,cy:45},'av-irl-b':{cx:28,cy:45},
+  'av-irl-i':{cx:28,cy:45},'av-pul':{cx:28,cy:45},'av-pul-d':{cx:28,cy:45},
+  'av-cal':{cx:26.2,cy:43.2},'av-ca2l':{cx:30,cy:46.5},
+};
+const _REYEDEF={
+  'av-irr-o':{cx:72,cy:45},'av-irr-m':{cx:72,cy:45},'av-irr-b':{cx:72,cy:45},
+  'av-irr-i':{cx:72,cy:45},'av-pur':{cx:72,cy:45},'av-pur-d':{cx:72,cy:45},
+  'av-car':{cx:70.2,cy:43.2},'av-ca2r':{cx:73.8,cy:46.5},
+};
+// Direction offsets (will be applied to both eyes)
+const _EYE_SHIFT={0:{dx:0,dy:-2.2},1:{dx:-2.2,dy:0},2:{dx:2.2,dy:0},3:{dx:0,dy:2.2}};
+
+function _moveEyes(dx,dy){
+  for(const[id,def] of Object.entries(_LEYEDEF)){
+    const el=document.getElementById(id); if(el){el.setAttribute('cx',def.cx+dx);el.setAttribute('cy',def.cy+dy);}
+  }
+  for(const[id,def] of Object.entries(_REYEDEF)){
+    const el=document.getElementById(id); if(el){el.setAttribute('cx',def.cx+dx);el.setAttribute('cy',def.cy+dy);}
+  }
+}
+function _resetEyes(){ _moveEyes(0,0); }
+
+function _animateFaceChoice(idx){
+  _stopFaceIdle();
+  const s=_EYE_SHIFT[idx]??{dx:0,dy:0};
+  _moveEyes(s.dx,s.dy);
+  // Raise eyebrows
+  ['av-brow-l','av-brow-l2','av-brow-r','av-brow-r2'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.setAttribute('transform','translate(0,-4)');
+  });
+  // Activate eye glow
+  const gl=document.getElementById('av-glow-eyes'); if(gl) gl.style.opacity='0.55';
+  // Pupil dilate: temporarily widen pupils then snap back
+  ['av-pul','av-pul-d','av-irl-i'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const orig=el.getAttribute('rx');
+    el.setAttribute('rx',parseFloat(orig)*1.35);
+    el.setAttribute('ry',parseFloat(el.getAttribute('ry'))*1.35);
+    setTimeout(()=>{el.setAttribute('rx',orig);el.setAttribute('ry',orig.includes('.')&&orig===el.getAttribute('rx')?orig:el.getAttribute('ry'));},350);
+  });
+  // Update glow rings
+  ['av-irl-glow','av-irr-glow'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.opacity='0.7';
+  });
+}
+
+function _resetFaceChosen(){
+  _resetEyes();
+  ['av-brow-l','av-brow-l2','av-brow-r','av-brow-r2'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.removeAttribute('transform');
+  });
+  const gl=document.getElementById('av-glow-eyes'); if(gl) gl.style.opacity='0';
+  ['av-irl-glow','av-irr-glow'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.opacity='0.35';
+  });
+  _startFaceIdle();
+}
+
+// ── FACE IDLE: slow eye scan + random blink ──
+const _SCAN_SEQ=[
+  {dx:0,dy:0},{dx:1.1,dy:-0.6},{dx:0.6,dy:0.4},{dx:0,dy:0},
+  {dx:-1.1,dy:0.3},{dx:-0.5,dy:-0.7},{dx:0,dy:0},{dx:0.8,dy:0.9},
+];
+let _scanIdx=0;
+
+function _startFaceIdle(){
+  _stopFaceIdle();
+  _scanTimer=setInterval(()=>{
+    if(document.getElementById('game').classList.contains('hidden')) return;
+    const p=_SCAN_SEQ[_scanIdx%_SCAN_SEQ.length];
+    _moveEyes(p.dx,p.dy); _scanIdx++;
+  },1500);
+  function _scheduleBlink(){
+    _blinkTimer=setTimeout(()=>{
+      const fw=document.getElementById('av-face-wrap');
+      if(!fw||fw.style.display==='none'){_scheduleBlink();return;}
+      // Animate blink via opacity on eyelid overlays
+      const el=document.getElementById('av-eyelid-l'),er=document.getElementById('av-eyelid-r');
+      if(el) el.style.opacity='0.95'; if(er) er.style.opacity='0.95';
+      setTimeout(()=>{if(el)el.style.opacity='0';if(er)er.style.opacity='0';},120);
+      _scheduleBlink();
+    },2200+Math.random()*3500);
+  }
+  _scheduleBlink();
+}
+
+function _stopFaceIdle(){
+  clearInterval(_scanTimer); clearTimeout(_blinkTimer);
+  _scanTimer=null; _blinkTimer=null;
+}
 
 // Idle box glow
 setInterval(()=>{
